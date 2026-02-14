@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Priyanshu Patra</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- THEME CONFIGURATION --- */
+        :root {
+            --bg-dark: #0d1117;       /* GitHub Dark Dimmed Background */
+            --sidebar-bg: #161b22;    /* Sidebar Background */
+            --border-color: #30363d;  /* Subtle Borders */
+            --text-main: #c9d1d9;     /* Main Text */
+            --text-muted: #8b949e;    /* Muted Text */
+            --accent-blue: #58a6ff;   /* Links */
+            --accent-green: #238636;  /* Buttons */
+            --accent-orange: #f78166; /* File Icons */
+            --code-font: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--code-font);
+            display: flex;
+            height: 100vh;
+            height: 100dvh; /* Fix for mobile browsers */
+            overflow: hidden; 
+        }
+
+        /* --- MOBILE HEADER --- */
+        .mobile-header {
+            display: none;
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            z-index: 100;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .brand-name {
+            font-weight: bold;
+            color: var(--text-main);
+            letter-spacing: -1px;
+            font-size: 1.1rem; /* Slightly larger for name */
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+            z-index: 90;
+        }
+
+        .sidebar-header {
+            padding: 15px 20px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .file-list {
+            list-style: none;
+            padding-top: 10px;
+        }
+
+        /* FOLDER HEADER STYLING */
+        .folder-header {
+            padding: 8px 15px;
+            color: var(--text-muted);
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .folder-header:hover {
+            color: var(--text-main);
+        }
+
+        .folder-arrow {
+            width: 12px;
+            display: inline-block;
+            text-align: center;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+
+        /* FILE ITEMS - FIXED LAYOUT & TRUNCATION */
+        .file-item {
+            padding: 8px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            transition: background 0.2s;
+            overflow: hidden; /* Essential for ellipsis */
+        }
+
+        /* Indent project files */
+        .file-item.nested {
+            padding-left: 35px; 
+        }
+
+        .file-item:hover {
+            background-color: #21262d;
+            color: var(--text-main);
+        }
+
+        .file-item.active {
+            background-color: #21262d;
+            border-left-color: var(--accent-orange);
+            color: var(--text-main);
+        }
+
+        .file-icon {
+            flex-shrink: 0;
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+        }
+
+        /* Force truncation for long filenames */
+        .file-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* --- MAIN CONTENT LAYOUT --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-dark);
+            height: 100%;
+            overflow: hidden; 
+        }
+
+        /* FIXED: Tight Breadcrumb Spacing */
+        .breadcrumb {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            background-color: var(--bg-dark);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; 
+            white-space: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none; 
+        }
+        
+        /* The separator slash style */
+        .bread-sep {
+            margin: 0 4px; /* TIGHT SPACING (4px) */
+            opacity: 0.5;
+            font-size: 0.9em;
+        }
+        
+        .breadcrumb::-webkit-scrollbar { display: none; }
+
+        /* SCROLL WRAPPER */
+        .scroll-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-viewer {
+            padding: 40px;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1 0 auto; 
+        }
+
+        /* TYPOGRAPHY */
+        .content-viewer h1 { font-size: 2rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        .content-viewer h2 { font-size: 1.4rem; color: var(--accent-blue); margin-top: 35px; margin-bottom: 15px; }
+        .content-viewer h3 { font-size: 1.1rem; color: var(--text-main); margin-top: 20px; margin-bottom: 10px; }
+        .content-viewer p { margin-bottom: 15px; color: var(--text-main); }
+        .content-viewer ul { margin-left: 20px; margin-bottom: 20px; color: var(--text-muted); }
+        .content-viewer li { margin-bottom: 8px; }
+
+        /* SKILL BADGES - MOBILE OPTIMIZED */
+        .badge-container { 
+            display: flex; 
+            gap: 12px; 
+            flex-wrap: wrap; 
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .badge {
+            background: #21262d;
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            flex-grow: 0;
+        }
+
+        /* PROFILE HEADER */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #161b22;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .profile-img {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 4px solid var(--border-color);
+            object-fit: cover;
+            object-position: top;
+            background-color: #0d1117;
+        }
+
+        /* CODE BLOCKS */
+        .code-block {
+            background-color: #0d1117;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: auto;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            position: relative;
+        }
+        
+        .code-block::before {
+            content: "CODE";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-bottom-left-radius: 6px;
+        }
+
+        .keyword { color: #ff7b72; }
+        .string { color: #a5d6ff; }
+        .function { color: #d2a8ff; }
+        .number { color: #79c0ff; }
+
+        /* DOWNLOAD BUTTON */
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-green);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: opacity 0.2s;
+            margin-top: 10px;
+        }
+        .btn:hover { opacity: 0.9; }
+
+        /* FOOTER */
+        .footer {
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-dark);
+            padding: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .footer a { 
+            color: var(--accent-blue); 
+            text-decoration: none; 
+            font-weight: bold;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            body { flex-direction: column; padding-top: 60px; }
+            .mobile-header { display: flex; }
+            .sidebar {
+                position: fixed; top: 60px; left: 0; bottom: 0;
+                width: 85%; max-width: 320px;
+                transform: translateX(-100%);
+                box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+                z-index: 1000;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .profile-section { flex-direction: column; text-align: center; }
+            .content-viewer { padding: 20px; } 
+            
+            .badge-container {
+                gap: 8px;
+            }
+            .badge {
+                font-size: 0.8rem;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <div class="brand-name">Priyanshu Patra</div>
+        <button class="menu-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span>EXPLORER</span>
+            <i class="fas fa-ellipsis-h"></i>
+        </div>
+        <ul class="file-list" id="fileList"></ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Breadcrumb Bar -->
+        <div class="breadcrumb" id="breadcrumbBar"></div>
+
+        <div class="scroll-wrapper">
+            <div class="content-viewer" id="viewer"></div>
+
+            <footer class="footer">
+                <div>&copy; 2026 Priyanshu Patra</div>
+                <div class="footer-links">
+                    <a href="https://www.linkedin.com/in/priyanshu-patra-345900312" target="_blank">LinkedIn</a>
+                    <a href="mailto:priyanshupatra111@gmail.com">Email</a>
+                </div>
+            </footer>
+        </div>
+    </main>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // CONFIGURATION
+        const config = {
+            name: "Priyanshu Patra",
+            title: "Aspiring Software & Cloud Network Engineer",
+            email: "priyanshupatra111@gmail.com", 
+            linkedin: "https://www.linkedin.com/in/priyanshu-patra-345900312",
+            location: "Bhubaneswar, Odisha", 
+            profileImage: "profile.png",
+            resumeFile: "resume.pdf"
+        };
+
+        // 1. TOP FILES
+        const topFiles = [
+            {
+                id: "readme",
+                name: "README.md",
+                icon: "fa-solid fa-circle-info",
+                color: "#58a6ff",
+                content: `
+                    <div class="profile-section">
+                        <img src="${config.profileImage}" class="profile-img" alt="Priyanshu Patra" 
+                             onerror="this.src='https://ui-avatars.com/api/?name=Priyanshu+Patra&background=238636&color=fff&size=150'">
+                        <div>
+                            <h1>${config.name}</h1>
+                            <p style="color: #8b949e; font-size: 1.1rem; margin-bottom: 10px;">${config.title}</p>
+                            <p style="font-size: 0.9rem;">📍 ${config.location} &bull; 🟢 Open to Work</p>
+                        </div>
+                    </div>
+
+                    <h2>About Me</h2>
+                    <p>
+                        As an Engineering Student focused on the intersection of technical logic and AI execution, I build for the future of technology where orchestrating the right tools is more impactful than manual syntax.
+                    </p>
+                    <p>
+                        I use an AI-augmented workflow to rapidly transform concepts into functional software, bridging the gap between vision and deployment. By blending technical fundamentals with a background in design, I develop tools that are as intuitive as they are robust. My strength lies in strategic troubleshooting, leveraging deep technical research and AI-driven insights to solve complex infrastructure and networking challenges independently and efficiently.
+                    </p>
+
+                    <h2>Technical Skills</h2>
+                    <div class="badge-container">
+                        <span class="badge"><i class="fa-solid fa-robot" style="color: #7ee787;"></i> AI Orchestration</span>
+                        <span class="badge"><i class="fa-solid fa-microchip" style="color: #d2a8ff;"></i> AI-Assisted Dev</span>
+                        <span class="badge"><i class="fa-solid fa-magnifying-glass" style="color: #21759b;"></i> Technical Research</span>
+                        <span class="badge"><i class="fa-solid fa-bolt" style="color: #f89820;"></i> Rapid Prototyping</span>
+                        <span class="badge"><i class="fa-solid fa-wrench" style="color: #f78166;"></i> Intuitive Tooling</span>
+                        <span class="badge"><i class="fa-brands fa-linux" style="color: #FCC624;"></i> Linux/Termux</span>
+                    </div>
+
+                    <h2>Education</h2>
+                    <ul>
+                        <li><strong>B.Tech in Computer Science & Engineering (Data Science)</strong><br>
+                        <span style="font-size: 0.9rem; color: #8b949e;">Bhubaneswar Engineering College | Pursuing</span></li>
+                    </ul>
+                `
+            },
+            {
+                id: "resume",
+                name: "resume.pdf",
+                icon: "fa-solid fa-file-pdf",
+                color: "#f78166",
+                content: `
+                    <h1>Resume / CV</h1>
+                    <p>Click the button below to view or download my official resume.</p>
+                    
+                    <div style="background: #161b22; padding: 40px; border: 1px solid #30363d; border-radius: 8px; text-align: center; margin: 30px 0;">
+                        <i class="fas fa-file-pdf" style="font-size: 50px; color: #f78166; margin-bottom: 20px;"></i>
+                        <h3 style="margin-bottom: 10px;">Priyanshu_Patra_Resume.pdf</h3>
+                        <p style="font-size: 0.9rem; margin-bottom: 30px; color: #8b949e;">Software & Cloud Network Engineer • PDF</p>
+                        
+                        <a href="${config.resumeFile}" class="btn" target="_blank" download>
+                            <i class="fas fa-download"></i> Download Full Resume
+                        </a>
+                    </div>
+                `
+            }
+        ];
+
+        // 2. PROJECT FILES
+        const projectFiles = [
+            {
+                id: "project1",
+                name: "powertech_ai_backend.py",
+                icon: "fa-brands fa-python",
+                color: "#3572A5", 
+                content: `
+                    <h1>Project: Power Tech AI Regulatory Assistant</h1>
+                    <p><strong>Internship Project @ Power Tech Consultant</strong> <span style="background:#238636; color:white; padding:2px 6px; border-radius:4px; font-size:0.7em;">PROTOTYPE / POC</span></p>
+                    
+                    <p style="color: #c9d1d9; border-left: 3px solid #7ee787; padding-left: 15px; margin: 20px 0;">
+                        <strong>Developer Role:</strong> This project serves as an Enterprise-Grade Proof of Concept (PoC). It highlights my capability as an <strong>AI-Assisted Architect</strong>. 
+                        Rather than manual coding, I orchestrated advanced LLM tools (ChatGPT, Replit) to generate, debug, 
+                        and optimize complex FastAPI and LangChain logic. I focused on system architecture, prompt engineering, 
+                        and integration strategy to deliver a production-ready RAG system in record time.
+                    </p>
+
+                    <h3>Key Features</h3>
+                    <ul>
+                        <li><strong>RAG Architecture:</strong> Combines FastAPI, LangChain, and FAISS for accurate document retrieval.</li>
+                        <li><strong>Smart Chunking:</strong> Uses RecursiveCharacterTextSplitter with overlap to maintain context across PDF pages.</li>
+                        <li><strong>Strict Prompt Engineering:</strong> Ensures the AI only answers from the provided documents ("I cannot find this information...").</li>
+                        <li><strong>Admin Interface:</strong> A simple HTML interface to upload and train new PDF regulations instantly.</li>
+                    </ul>
+
+                    <h3>Tech Stack</h3>
+                    <div class="badge-container">
+                        <span class="badge">FastAPI</span>
+                        <span class="badge">FAISS</span>
+                        <span class="badge">LangChain</span>
+                        <span class="badge">AI-Assisted Architecture</span>
+                    </div>
+
+                    <h3>Backend Logic (FastAPI + LangChain)</h3>
+                    <div class="code-block" style="position: relative;">
+                    <style>.code-block::before { content: "Python"; }</style>
+<span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI, UploadFile, File
+<span class="keyword">from</span> langchain_community.vectorstores <span class="keyword">import</span> FAISS
+<span class="keyword">from</span> langchain_openai <span class="keyword">import</span> ChatOpenAI
+
+<span class="comment"># 1. Initialize AI Brain</span>
+embeddings = OpenAIEmbeddings(model=<span class="string">"text-embedding-3-small"</span>)
+vector_db = FAISS.load_local(<span class="string">"ai_memory_store"</span>, embeddings)
+
+<span class="decorator">@app.post</span>(<span class="string">"/ask"</span>)
+<span class="keyword">def</span> <span class="function">ask_question</span>(query: Query):
+    <span class="comment"># 2. Retrieve & Generate</span>
+    llm = ChatOpenAI(model_name=<span class="string">"gpt-4o"</span>, temperature=0)
+    qa = RetrievalQA.from_chain_type(
+        llm=llm, 
+        chain_type=<span class="string">"stuff"</span>, 
+        retriever=vector_db.as_retriever(search_kwargs={<span class="string">"k"</span>: 4})
+    )
+    res = qa.invoke({<span class="string">"query"</span>: query.question})
+    <span class="keyword">return</span> {<span class="string">"answer"</span>: res['result']}
+                    </div>
+                `
+            },
+            {
+                id: "project2",
+                name: "frontend_widget.html",
+                icon: "fa-brands fa-html5",
+                color: "#E34F26", 
+                content: `
+                    <h1>Project: Frontend Chat Widget</h1>
+                    <p><strong>Part of the Power Tech Consultant Internship Project</strong> <span style="background:#238636; color:white; padding:2px 6px; border-radius:4px; font-size:0.7em;">PROTOTYPE</span></p>
+                    <p>The client-side interface for the Regulatory Assistant. It is a drop-in HTML/JS widget that can be pasted into any existing website (Django/Flask base templates).</p>
+                    
+                    <p>I utilized AI code generation to rapidly prototype this UI, focusing my effort on ensuring seamless asynchronous communication with the backend API.</p>
+
+                    <h3>Features</h3>
+                    <ul>
+                        <li><strong>Floating Button:</strong> A non-intrusive chat bubble in the corner.</li>
+                        <li><strong>Real-time API Calls:</strong> Connects asynchronously to the FastAPI backend.</li>
+                        <li><strong>Loading States:</strong> Shows a "Thinking..." animation while the AI processes the PDF content.</li>
+                    </ul>
+
+                    <h3>Widget Script Preview</h3>
+                    <div class="code-block" style="position: relative;">
+                    <style>.code-block::before { content: "HTML/JS"; }</style>
+<span class="comment">&lt;!-- Chat Interface --&gt;</span>
+<span class="keyword">&lt;div</span> id=<span class="string">"ptc-chat-window"</span> style=<span class="string">"display: none;"</span><span class="keyword">&gt;</span>
+    <span class="keyword">&lt;div</span> id=<span class="string">"ptc-messages"</span><span class="keyword">&gt;&lt;/div&gt;</span>
+    <span class="keyword">&lt;input</span> type=<span class="string">"text"</span> id=<span class="string">"ptc-input"</span> placeholder=<span class="string">"Ask about Tariff Orders..."</span><span class="keyword">&gt;</span>
+<span class="keyword">&lt;/div&gt;</span>
+
+<span class="keyword">&lt;script&gt;</span>
+    <span class="keyword">async function</span> <span class="function">askPTC</span>() {
+        <span class="keyword">const</span> text = document.getElementById(<span class="string">'ptc-input'</span>).value;
+        <span class="comment">// Call Backend API</span>
+        <span class="keyword">const</span> res = <span class="keyword">await</span> fetch(<span class="string">"http://127.0.0.1:8000/ask"</span>, {
+            method: <span class="string">"POST"</span>,
+            body: JSON.stringify({ question: text })
+        });
+        <span class="keyword">const</span> data = <span class="keyword">await</span> res.json();
+        <span class="comment">// Display Answer</span>
+        msgBox.innerHTML += data.answer;
+    }
+<span class="keyword">&lt;/script&gt;</span>
+                    </div>
+                `
+            },
+            {
+                id: "project3",
+                name: "chatbot_prototype.js",
+                icon: "fa-brands fa-js",
+                color: "#f1e05a", 
+                content: `
+                    <h1>Project: Multi-Persona AI Chatbot</h1>
+                    <p><strong>7th Sem Minor Project</strong> <span style="background:#238636; color:white; padding:2px 6px; border-radius:4px; font-size:0.7em;">POC</span></p>
+                    
+                    <p>An interactive Proof of Concept (PoC) built to demonstrate dynamic system prompt switching using the Gemini API. The goal was to create a single chat interface that could morph into three distinct personalities on command.</p>
+
+                    <h3>Personas Designed</h3>
+                    <ul>
+                        <li><strong>Priyanshu (Mentor):</strong> Professional, mature, and knowledgeable.</li>
+                        <li><strong>Payal (Friend):</strong> Warm, encouraging, and casual.</li>
+                        <li><strong>Bachu (Kid):</strong> Playful, curious, and simple language.</li>
+                    </ul>
+
+                    <h3>Tech Stack</h3>
+                    <div class="badge-container">
+                        <span class="badge">JavaScript (ES6)</span>
+                        <span class="badge">Gemini API</span>
+                        <span class="badge">Tailwind CSS</span>
+                    </div>
+
+                    <h3>Code Snippet (Persona Switching Logic)</h3>
+                    <div class="code-block" style="position: relative;">
+                    <style>.code-block::before { content: "JS"; }</style>
+<span class="keyword">const</span> personas = {
+    <span class="string">'Priyanshu'</span>: { role: <span class="string">"You are a professional mentor."</span>, color: <span class="string">"indigo"</span> },
+    <span class="string">'Bachu'</span>: { role: <span class="string">"You are a playful 8-year-old."</span>, color: <span class="string">"green"</span> }
+};
+
+<span class="keyword">async function</span> <span class="function">sendMessage</span>() {
+    <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(url, {
+        method: <span class="string">'POST'</span>,
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: text }] }],
+            <span class="comment">// Dynamic System Instruction</span>
+            systemInstruction: { parts: [{ text: personas[activeBot].role }] }
+        })
+    });
+}
+                    </div>
+                `
+            }
+        ];
+
+        // 3. CONTACT FILE
+        const contactFile = {
+            id: "contact",
+            name: "contact.json",
+            icon: "fa-solid fa-code",
+            color: "#7ee787",
+            content: `
+                <h1>Contact Information</h1>
+                <p>I am currently open to opportunities in AI-Assisted Development and Cloud Engineering. Let's discuss how I can contribute to your team's success.</p>
+                
+                <div class="code-block">
+<style>.code-block::before { content: "JSON"; }</style>
+{
+    <span class="string">"name"</span>: <span class="string">"${config.name}"</span>,
+    <span class="string">"email"</span>: <span class="string">"${config.email}"</span>,
+    <span class="string">"linkedin"</span>: <span class="string">"${config.linkedin}"</span>
+}
+                </div>
+
+                <h3 style="margin-top: 30px;">Direct Links</h3>
+                <ul>
+                    <li><a href="mailto:${config.email}" style="color: var(--accent-blue);">Send me an Email</a></li>
+                    <li><a href="${config.linkedin}" target="_blank" style="color: var(--accent-blue);">Connect on LinkedIn</a></li>
+                </ul>
+            `
+        };
+
+        // LOGIC
+        const fileListEl = document.getElementById('fileList');
+        const viewerEl = document.getElementById('viewer');
+        const breadcrumbEl = document.getElementById('breadcrumbBar');
+        const sidebarEl = document.getElementById('sidebar');
+
+        let isProjectsOpen = false; 
+        let activeFileId = 'readme'; 
+
+        function toggleProjects(e) {
+            if (e) {
+                e.stopPropagation();
+            }
+            isProjectsOpen = !isProjectsOpen;
+            renderSidebar();
+        }
+
+        function renderSidebar() {
+            fileListEl.innerHTML = '';
+            
+            // 1. Render Top Files (Readme & Resume)
+            topFiles.forEach(file => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                if (file.id === activeFileId) li.classList.add('active');
+                
+                // FIXED: Wrapped name for truncation
+                li.innerHTML = `
+                    <span class="file-icon" style="color: ${file.color}">
+                        <i class="${file.icon}"></i>
+                    </span> 
+                    <span class="file-name">${file.name}</span>
+                `;
+                li.onclick = () => loadFile(file);
+                fileListEl.appendChild(li);
+            });
+
+            // 2. Render Project Folder Header
+            const folderHeader = document.createElement('li');
+            folderHeader.className = 'folder-header';
+            
+            const arrowIcon = isProjectsOpen ? 'fa-chevron-down' : 'fa-chevron-right';
+            const folderIcon = isProjectsOpen ? 'fa-folder-open' : 'fa-folder';
+            
+            folderHeader.innerHTML = `
+                <span class="folder-arrow"><i class="fa-solid ${arrowIcon}"></i></span>
+                <i class="fa-solid ${folderIcon}" style="color: #8b949e;"></i> 
+                projects
+            `;
+            folderHeader.onclick = toggleProjects;
+            fileListEl.appendChild(folderHeader);
+
+            // 3. Render Project Files (Conditional)
+            if (isProjectsOpen) {
+                projectFiles.forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = 'file-item nested';
+                    if (file.id === activeFileId) li.classList.add('active');
+                    
+                    // FIXED: Wrapped name for truncation
+                    li.innerHTML = `
+                        <span class="file-icon" style="color: ${file.color}">
+                            <i class="${file.icon}"></i>
+                        </span> 
+                        <span class="file-name">${file.name}</span>
+                    `;
+                    li.onclick = () => loadFile(file);
+                    fileListEl.appendChild(li);
+                });
+            }
+
+            // 4. Render Contact File (Last)
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            if (contactFile.id === activeFileId) li.classList.add('active');
+            
+            li.innerHTML = `
+                <span class="file-icon" style="color: ${contactFile.color}">
+                    <i class="${contactFile.icon}"></i>
+                </span> 
+                <span class="file-name">${contactFile.name}</span>
+            `;
+            li.onclick = () => loadFile(contactFile);
+            fileListEl.appendChild(li);
+        }
+
+        function loadFile(file) {
+            activeFileId = file.id;
+            viewerEl.innerHTML = file.content;
+            
+            // Check if file is in projects to update breadcrumb
+            const isProject = projectFiles.find(f => f.id === file.id);
+            
+            // FIX: Tightened spacing
+            if(isProject) {
+                breadcrumbEl.innerHTML = `portfolio <span class="bread-sep">/</span> projects <span class="bread-sep">/</span> ${file.name}`;
+            } else {
+                breadcrumbEl.innerHTML = `portfolio <span class="bread-sep">/</span> ${file.name}`;
+            }
+            
+            renderSidebar();
+            
+            if (window.innerWidth <= 768) {
+                sidebarEl.classList.remove('open');
+            }
+        }
+
+        window.toggleSidebar = function() {
+            sidebarEl.classList.toggle('open');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && 
+                !sidebarEl.contains(e.target) && 
+                !e.target.closest('.menu-btn') &&
+                sidebarEl.classList.contains('open')) {
+                sidebarEl.classList.remove('open');
+            }
+        });
+
+        renderSidebar();
+        loadFile(topFiles[0]); 
+    </script>
+</body>
+</html>
+
+
