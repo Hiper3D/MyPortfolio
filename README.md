@@ -10,7 +10,8 @@ This repository contains the source code for my personal portfolio. To demonstra
 The application behaves like a lightweight SPA (Single Page Application [a web app or site that interacts with the user by dynamically rewriting the current web page with new data from the web server, instead of the default method of a web browser loading entire new pages]). It uses Vanilla JavaScript to dynamically inject content into the DOM based on user interaction, resulting in lightning-fast load times and seamless navigation.
 
 ## 🚀 Live Environment
-**View the Live Portfolio:** [ d1m1fa948besma.cloudfront.net ]
+***View the Live Portfolio:** [CLICK](https://d1m1fa948besma.cloudfront.net)
+
 
 ## 🛠️ Frontend Architecture & UI/UX Design
 
